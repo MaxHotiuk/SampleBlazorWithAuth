@@ -51,8 +51,8 @@ Sample.Infrastructure/
 
 1. Clone the repository:
    ```sh
-   git clone <repository-url>
-   cd <repository-directory>
+   git clone https://github.com/MaxHotiuk/SampleBlazorWithAuth.git
+   cd SampleBlazorWithAuth
    ```
 
 2. Restore dependencies:
