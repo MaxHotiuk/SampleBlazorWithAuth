@@ -1,0 +1,33 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Common ASP.NET Core packages -->
+    <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.3" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.Authorization" Version="9.0.3" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.3" />
+    
+    <!-- Entity Framework packages -->
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.3" />
+    <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
+    
+    <!-- Other common utilities -->
+    <PackageVersion Include="DotNetEnv" Version="3.1.1" />
+    <PackageVersion Include="Blazored.LocalStorage" Version="4.5.0" />
+    
+    <!-- Blazor packages -->
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.3" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" Version="9.0.3" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="9.0.3" />
+    
+    <!-- UI Framework -->
+    <PackageVersion Include="MudBlazor" Version="8.0.0" />
+    
+    <!-- Security -->
+    <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.7.0" />
+    <PackageVersion Include="Microsoft.AspNetCore.Identity" Version="2.3.1" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.3" />
+  </ItemGroup>
+</Project>

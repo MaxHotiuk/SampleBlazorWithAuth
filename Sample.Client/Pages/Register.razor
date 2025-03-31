@@ -1,0 +1,136 @@
+@page "/register"
+@using Sample.Client.Services
+@using System.ComponentModel.DataAnnotations
+@inject AuthService AuthService
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+
+<PageTitle>Register</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-16">
+    <MudPaper Elevation="3" Class="pa-8">
+        <MudText Typo="Typo.h4" Class="mb-4" Align="Align.Center">Register</MudText>
+        
+        <MudForm @ref="_form" @bind-IsValid="@_isValid">
+            <MudTextField @bind-Value="_username" Label="Username" Variant="Variant.Outlined" 
+                        Required="true" RequiredError="Username is required!" Class="mb-4" />
+            
+            <MudTextField @bind-Value="_email" Label="Email" Variant="Variant.Outlined"
+                        Required="true" RequiredError="Email is required!"
+                        Validation="@(new EmailAddressAttribute() {ErrorMessage = "Invalid email format"})" Class="mb-4" />
+            
+            <MudTextField @bind-Value="_password" Label="Password" Variant="Variant.Outlined"
+                        Required="true" RequiredError="Password is required!"
+                        InputType="@_passwordInputType" Adornment="Adornment.End"
+                        AdornmentIcon="@_passwordVisibilityIcon" OnAdornmentClick="TogglePasswordVisibility"
+                        Validation="@(new Func<string, IEnumerable<string?>>(ValidatePassword))" Class="mb-4" />
+            
+            <MudTextField @bind-Value="_confirmPassword" Label="Confirm Password" Variant="Variant.Outlined"
+                        Required="true" RequiredError="Please confirm your password"
+                        InputType="@_passwordInputType" Adornment="Adornment.End"
+                        AdornmentIcon="@_passwordVisibilityIcon" OnAdornmentClick="TogglePasswordVisibility"
+                        Validation="@(new Func<string, string?>(ValidatePasswordConfirmation))" Class="mb-4" />
+            
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" 
+                    Disabled="@(!_isValid || _isProcessing)" OnClick="ProcessRegistration" Class="mt-4">
+                @if (_isProcessing)
+                {
+                    <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                    <MudText Class="ms-2">Processing</MudText>
+                }
+                else
+                {
+                    <MudText>Register</MudText>
+                }
+            </MudButton>
+        </MudForm>
+        
+        <MudDivider Class="my-6" />
+        
+        <MudText Align="Align.Center">
+            Already have an account? <MudLink Href="/login">Login</MudLink>
+        </MudText>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private string _username = string.Empty;
+    private string _email = string.Empty;
+    private string _password = string.Empty;
+    private string _confirmPassword = string.Empty;
+    private bool _isValid;
+    private bool _isProcessing = false;
+    private MudForm? _form;
+    
+    private InputType _passwordInputType = InputType.Password;
+    private string _passwordVisibilityIcon = Icons.Material.Filled.VisibilityOff;
+
+    private void TogglePasswordVisibility()
+    {
+        if (_passwordInputType == InputType.Password)
+        {
+            _passwordInputType = InputType.Text;
+            _passwordVisibilityIcon = Icons.Material.Filled.Visibility;
+        }
+        else
+        {
+            _passwordInputType = InputType.Password;
+            _passwordVisibilityIcon = Icons.Material.Filled.VisibilityOff;
+        }
+    }
+
+    private IEnumerable<string?> ValidatePassword(string password)
+    {
+        if (string.IsNullOrWhiteSpace(password))
+            yield return "Password is required!";
+        if (password.Length < 6)
+            yield return "Password must be at least 6 characters!";
+        if (!password.Any(char.IsUpper))
+            yield return "Password must contain at least one uppercase letter!";
+        if (!password.Any(char.IsDigit))
+            yield return "Password must contain at least one digit!";
+    }
+
+    private string? ValidatePasswordConfirmation(string confirmPassword)
+    {
+        if (_password != confirmPassword)
+            return "Passwords do not match!";
+        return null;
+    }
+
+    private async Task ProcessRegistration()
+    {
+        _isProcessing = true;
+        
+        try
+        {
+            var result = await AuthService.RegisterAsync(_username, _email, _password);
+            
+            if (result)
+            {
+                Snackbar.Add("Registration successful!", Severity.Success);
+                var loginResult = await AuthService.LoginAsync(_email, _password);
+                if (loginResult)
+                {
+                    NavigationManager.NavigateTo("/");
+                }
+                else
+                {
+                    Snackbar.Add("Login failed after registration. Please try again.", Severity.Error);
+                }
+            }
+            else
+            {
+                Snackbar.Add("Registration failed. Please try again.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"An error occurred: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isProcessing = false;
+        }
+    }
+}

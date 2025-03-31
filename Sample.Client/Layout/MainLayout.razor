@@ -1,0 +1,224 @@
+﻿@inherits LayoutComponentBase
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+@using Microsoft.AspNetCore.Components.Authorization
+@using Sample.Client.Services
+@inject AuthService AuthService
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+
+@if (!_isLoaded)
+{
+    <MudThemeProvider Theme="@_theme" IsDarkMode="_isDarkMode" />
+    <div class="loading-screen">
+        <MudProgressLinear Color="Color.Primary" Striped="true" Rounded="true" Indeterminate="true" Size="Size.Medium" Class="my-7" Style="width: 30%;" />
+    </div>
+}
+else
+{
+    <MudThemeProvider Theme="@_theme" IsDarkMode="_isDarkMode" />
+    <MudPopoverProvider />
+    <MudDialogProvider />
+    <MudSnackbarProvider />
+    <MudLayout>
+        <MudAppBar Elevation="1">
+            <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+            <MudText Typo="Typo.h5" Class="ml-3">Application</MudText>
+            <MudSpacer />
+            
+            <AuthorizeView>
+                <Authorized>
+                    <MudMenu Icon="@Icons.Material.Filled.AccountCircle" Color="Color.Inherit" Direction="Direction.Bottom" OffsetY="true" FullWidth="true" ActivationEvent="@MouseEvent.MouseOver" AnchorOrigin="Origin.BottomCenter" TransformOrigin="Origin.TopCenter">
+                        <MudText Typo="Typo.body2" Class="px-4 py-2">
+                            @context.User.Identity?.Name
+                        </MudText>
+                        <MudDivider />
+                        <MudMenuItem Href="/profile" Icon="@Icons.Material.Filled.Person">Profile</MudMenuItem>
+                        <MudMenuItem OnClick="LogoutUser" Icon="@Icons.Material.Filled.ExitToApp">Logout</MudMenuItem>
+                    </MudMenu>
+                </Authorized>
+                <NotAuthorized>
+                    <MudButton Variant="Variant.Text" Color="Color.Inherit" Href="/login" StartIcon="@Icons.Material.Filled.Login">
+                        Login
+                    </MudButton>
+                    <MudButton Variant="Variant.Text" Color="Color.Inherit" Href="/register" StartIcon="@Icons.Material.Filled.PersonAdd">
+                        Register
+                    </MudButton>
+                </NotAuthorized>
+            </AuthorizeView>
+            
+            <MudIconButton Icon="@(DarkLightModeButtonIcon)" Color="Color.Inherit" OnClick="@DarkModeToggle" />
+        </MudAppBar>
+        <MudDrawer id="nav-drawer" @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2">
+            <NavMenu />
+        </MudDrawer>
+        <MudMainContent Class="pt-16 pa-4">
+            @Body
+        </MudMainContent>
+    </MudLayout>
+
+    <div id="blazor-error-ui" data-nosnippet>
+        An unhandled error has occurred.
+        <a href="." class="reload">Reload</a>
+        <span class="dismiss">🗙</span>
+    </div>
+}
+
+<style>
+    .loading-screen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        background-color: var(--mud-palette-background);
+        z-index: 1000;
+    }
+</style>
+
+@code {
+    private bool _drawerOpen = true;
+    private bool _isDarkMode = true;
+    private bool _isLoaded = false;
+    private MudTheme? _theme = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        base.OnInitialized();
+
+        _theme = new()
+        {
+            PaletteLight = _lightPalette,
+            PaletteDark = _darkPalette,
+            LayoutProperties = new LayoutProperties()
+        };
+
+        if (OperatingSystem.IsBrowser())
+        {
+            var storedTheme = await localStorage.GetItemAsync<bool?>("isDarkMode");
+            if (storedTheme.HasValue)
+            {
+                _isDarkMode = storedTheme.Value;
+            }
+
+            var storedDrawerState = await localStorage.GetItemAsync<string>("drawerState");
+            if (storedDrawerState == "open")
+            {
+                _drawerOpen = true;
+            }
+            else if (storedDrawerState == "closed")
+            {
+                _drawerOpen = false;
+            }
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await Task.Delay(500);
+            _isLoaded = true;
+            StateHasChanged();
+        }
+    }
+
+    private void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+
+        if (OperatingSystem.IsBrowser())
+        {
+            var drawerState = _drawerOpen ? "open" : "closed";
+            localStorage.SetItemAsync("drawerState", drawerState);
+        }
+    }
+
+    private async Task DarkModeToggle()
+    {
+        _isDarkMode = !_isDarkMode;
+        
+        if (OperatingSystem.IsBrowser())
+        {
+            await localStorage.SetItemAsync("isDarkMode", _isDarkMode);
+        }
+    }
+    
+    private async Task LogoutUser()
+    {
+        await AuthService.LogoutAsync();
+        Snackbar.Add("You have been logged out", Severity.Info);
+        NavigationManager.NavigateTo("/");
+    }
+
+    private readonly PaletteLight _lightPalette = new()
+    {
+        Primary = "#3f51b5",  // Яскравий синій
+        Secondary = "#ff4081",  // Рожевий/фуксія
+        Tertiary = "#4caf50",  // Зелений
+        AppbarText = "#ffffff",  // Білий текст для кращого контрасту
+        AppbarBackground = "#3f51b5",  // Основний колір
+        DrawerBackground = "#ffffff",
+        Background = "#f5f7fa",
+        Surface = "#ffffff",
+        DrawerText = "#424242",
+        DrawerIcon = "#5c6bc0",
+        TextPrimary = "#212121",
+        TextSecondary = "#757575",
+        Black = "#000000",
+        White = "#ffffff",
+        GrayLight = "#e0e0e0",
+        GrayLighter = "#f5f5f5",
+        Info = "#2196f3",  // Яскраво-блакитний
+        Error = "#f44336",  // Яскраво-червоний
+        Success = "#4caf50",  // Зелений
+        Warning = "#ff9800",  // Помаранчевий
+        ActionDefault = "#5c6bc0",
+        ActionDisabled = "#bdbdbd",
+        ActionDisabledBackground = "#eeeeee",
+        LinesDefault = "#e0e0e0",
+        TableLines = "#e0e0e0",
+        Divider = "#e0e0e0",
+        OverlayLight = "rgba(255,255,255,0.5)",
+    };
+
+    private readonly PaletteDark _darkPalette = new()
+    {
+        Primary = "#7986cb",  // Світліший синій
+        Secondary = "#ff80ab",  // Світліша рожева
+        Tertiary = "#81c784",  // Світліший зелений
+        Surface = "#121212",  // Глибокий чорний
+        Background = "#1a1a1a",
+        BackgroundGray = "#121212",
+        AppbarText = "#ffffff",
+        AppbarBackground = "#121212",
+        DrawerBackground = "#1e1e1e",
+        ActionDefault = "#9fa8da",
+        ActionDisabled = "#616161",
+        ActionDisabledBackground = "#424242",
+        TextPrimary = "#e0e0e0",
+        TextSecondary = "#b0b0b0",
+        TextDisabled = "#616161",
+        DrawerIcon = "#9fa8da",
+        DrawerText = "#e0e0e0",
+        GrayLight = "#424242",
+        GrayLighter = "#2d2d2d",
+        Info = "#64b5f6",  // Яскравий блакитний
+        Success = "#81c784",  // Яскравий зелений
+        Warning = "#ffb74d",  // Яскравий помаранчевий
+        Error = "#e57373",  // Яскравий червоний
+        LinesDefault = "#424242",
+        TableLines = "#424242",
+        Divider = "#424242",
+        OverlayLight = "rgba(0,0,0,0.5)",
+    };
+
+    public string DarkLightModeButtonIcon => _isDarkMode switch
+    {
+        true => Icons.Material.Rounded.LightMode,
+        false => Icons.Material.Outlined.DarkMode,
+    };
+}
