@@ -15,7 +15,6 @@ migrate:
 	@read name; \
 		echo "Creating migration with name: $$name"; \
 		cd Sample.Infrastructure; \
-		rm -rf Migrations; \
 		dotnet ef migrations add $$name --startup-project ../Sample/Sample.csproj;
 update:
 	@echo "Enter migration name:"
