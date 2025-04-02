@@ -6,14 +6,19 @@ using Sample.Infrastructure.Data;
 
 namespace Sample.Infrastructure.Repositories;
 
-public class UserRepository(ApplicationDbContext context, UserManager<User> userManager) : RepositoryBase<User>(context), IUserRepository
+public class UserRepository(ApplicationDbContext context, UserManager<User> userManager, RoleManager<IdentityRole> roleManager) : RepositoryBase<User>(context), IUserRepository
 {
     private readonly UserManager<User> _userManager = userManager;
+    private readonly RoleManager<IdentityRole> _roleManager = roleManager;
 
     public async Task<IdentityResult> AddAsync(User user, string password)
     {
         var result = await _userManager.CreateAsync(user, password);
-
+        if (_roleManager.Roles.All(r => r.Name != "User"))
+        {
+            var role = new IdentityRole("User");
+            await _roleManager.CreateAsync(role);
+        }
         await _userManager.AddToRoleAsync(user, "User");
         return result;
     }
