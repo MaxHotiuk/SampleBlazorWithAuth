@@ -74,4 +74,84 @@ public class AuthService
         var token = await _localStorage.GetItemAsync<string>(TOKEN_KEY);
         return !string.IsNullOrEmpty(token);
     }
+
+    public async Task<string?> GetCurrentUsername()
+    {
+        var authState = await _authStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            return user.Identity.Name;
+        }
+        
+        return null;
+    }
+    
+    public async Task EnsureAuthHeaderSet()
+    {
+        var token = await _localStorage.GetItemAsync<string>(TOKEN_KEY);
+        
+        if (!string.IsNullOrEmpty(token) && 
+            (_httpClient.DefaultRequestHeaders.Authorization == null || 
+             _httpClient.DefaultRequestHeaders.Authorization.Parameter != token))
+        {
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        }
+    }
+
+    public async Task<bool> LoginWithTokenAsync(string token)
+    {
+        if (string.IsNullOrEmpty(token))
+            return false;
+
+        await _localStorage.SetItemAsync(TOKEN_KEY, token);
+
+        ((CustomAuthStateProvider)_authStateProvider).NotifyUserAuthentication(token);
+
+        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        return true;
+    }
+
+    public async Task<byte[]?> GetProfilePictureAsync()
+    {
+        await EnsureAuthHeaderSet();
+        
+        try
+        {
+            var response = await _httpClient.GetAsync("api/User/profilepicture");
+            
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadAsByteArrayAsync();
+            }
+        }
+        catch
+        {
+            // Handle exceptions silently
+        }
+        
+        return null;
+    }
+
+    public async Task<bool> UploadProfilePictureAsync(Stream imageStream, string fileName)
+    {
+        await EnsureAuthHeaderSet();
+        
+        var content = new MultipartFormDataContent();
+        var fileContent = new StreamContent(imageStream);
+        content.Add(fileContent, "file", fileName);
+        
+        var response = await _httpClient.PostAsync("api/User/profilepicture", content);
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<bool> RemoveProfilePictureAsync()
+    {
+        await EnsureAuthHeaderSet();
+        
+        var response = await _httpClient.DeleteAsync("api/User/profilepicture");
+        return response.IsSuccessStatusCode;
+    }
 }

@@ -5,6 +5,8 @@
 @inject AuthService AuthService
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject HttpClient HttpClient
+@inject ProfilePictureService ProfilePictureService
 
 @if (!_isLoaded)
 {
@@ -27,13 +29,27 @@ else
             
             <AuthorizeView>
                 <Authorized>
-                    <MudMenu Dense Icon="@Icons.Material.Filled.AccountCircle" Color="Color.Inherit" Direction="Direction.Bottom" OffsetY="true" FullWidth="true" ActivationEvent="@MouseEvent.MouseOver" AnchorOrigin="Origin.BottomCenter" TransformOrigin="Origin.TopCenter">
-                        <MudText Typo="Typo.body2" Class="px-4 py-2">
-                            @context.User.Identity?.Name
-                        </MudText>
-                        <MudDivider />
-                        <MudMenuItem Href="/profile" Icon="@Icons.Material.Filled.Person">Profile</MudMenuItem>
-                        <MudMenuItem OnClick="LogoutUser" Icon="@Icons.Material.Filled.ExitToApp">Logout</MudMenuItem>
+                    <MudMenu Dense Color="Color.Inherit" Direction="Direction.Bottom" OffsetY="true" FullWidth="true" ActivationEvent="@MouseEvent.MouseOver" AnchorOrigin="Origin.BottomCenter" TransformOrigin="Origin.TopCenter">
+                        <ActivatorContent>
+                            @if (_profileImageUrl != null)
+                            {
+                                <MudAvatar Style="height: 40px; width: 40px; cursor: pointer;">
+                                    <MudImage Src="@_profileImageUrl" Alt="Profile" />
+                                </MudAvatar>
+                            }
+                            else
+                            {
+                                <MudIconButton Icon="@Icons.Material.Filled.AccountCircle" Color="Color.Inherit" />
+                            }
+                        </ActivatorContent>
+                        <ChildContent>
+                            <MudText Typo="Typo.body2" Class="px-4 py-2">
+                                @context.User.Identity?.Name
+                            </MudText>
+                            <MudDivider />
+                            <MudMenuItem Href="/profile" Icon="@Icons.Material.Filled.Person">Profile</MudMenuItem>
+                            <MudMenuItem OnClick="LogoutUser" Icon="@Icons.Material.Filled.ExitToApp">Logout</MudMenuItem>
+                        </ChildContent>
                     </MudMenu>
                 </Authorized>
                 <NotAuthorized>
@@ -84,6 +100,8 @@ else
     private bool _isDarkMode = true;
     private bool _isLoaded = false;
     private MudTheme? _theme = null;
+    private string? _profileImageUrl;
+    private bool _hasProfilePicture = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -114,6 +132,100 @@ else
                 _drawerOpen = false;
             }
         }
+        
+        // Subscribe to the profile picture change event
+        ProfilePictureService.OnProfilePictureChanged += OnProfilePictureChanged;
+        
+        await LoadProfilePictureAsync();
+    }
+
+    private void OnProfilePictureChanged()
+    {
+        // If there's a URL in the service, use it; otherwise reload from the API
+        if (ProfilePictureService.CurrentProfilePictureUrl != null)
+        {
+            _profileImageUrl = ProfilePictureService.CurrentProfilePictureUrl;
+            _hasProfilePicture = true;
+        }
+        else
+        {
+            // If the service indicates the picture was cleared, clear it here too
+            _profileImageUrl = null;
+            _hasProfilePicture = false;
+            
+            // Since the removal happened elsewhere, we don't need to reload from the API
+            // But if we wanted to validate, we could call LoadProfilePictureAsync();
+        }
+        
+        StateHasChanged();
+    }
+
+    private async Task LoadProfilePictureAsync()
+    {
+        try
+        {
+            var isAuthenticated = await AuthService.IsUserAuthenticatedAsync();
+            if (!isAuthenticated)
+                return;
+                
+            // Try to fetch profile picture
+            var imageBytes = await AuthService.GetProfilePictureAsync();
+            if (imageBytes != null && imageBytes.Length > 0)
+            {
+                // Determine content type based on bytes
+                string contentType = "image/jpeg";
+                if (imageBytes.Length > 8 && 
+                    imageBytes[0] == 0x89 && 
+                    imageBytes[1] == 0x50 && 
+                    imageBytes[2] == 0x4E && 
+                    imageBytes[3] == 0x47)
+                {
+                    contentType = "image/png";
+                }
+                
+                // Convert to data URL
+                _profileImageUrl = $"data:{contentType};base64,{Convert.ToBase64String(imageBytes)}";
+                _hasProfilePicture = true;
+                
+                // Store the URL in the service (without triggering the event)
+                if (ProfilePictureService.CurrentProfilePictureUrl == null)
+                {
+                    ProfilePictureService.CurrentProfilePictureUrl = _profileImageUrl;
+                }
+            }
+            else
+            {
+                // Check if user has a profile picture by making a lightweight HEAD request
+                try
+                {
+                    var response = await HttpClient.SendAsync(new HttpRequestMessage(HttpMethod.Head, "api/User/profilepicture"));
+                    if (response.IsSuccessStatusCode)
+                    {
+                        // Use URL with cache-busting
+                        _profileImageUrl = $"api/User/profilepicture?t={DateTime.Now.Ticks}";
+                        _hasProfilePicture = true;
+                        
+                        // Store the URL in the service (without triggering the event)
+                        if (ProfilePictureService.CurrentProfilePictureUrl == null)
+                        {
+                            ProfilePictureService.CurrentProfilePictureUrl = _profileImageUrl;
+                        }
+                    }
+                }
+                catch
+                {
+                    // If error occurs, fall back to default icon
+                    _profileImageUrl = null;
+                    _hasProfilePicture = false;
+                }
+            }
+        }
+        catch (Exception)
+        {
+            // Fall back to default icon if there's any error
+            _profileImageUrl = null;
+            _hasProfilePicture = false;
+        }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -122,6 +234,11 @@ else
         {
             await Task.Delay(500);
             _isLoaded = true;
+            var authState = await localStorage.GetItemAsync<string>("authToken");
+            if (!string.IsNullOrEmpty(authState))
+            {
+                _ = await AuthService.LoginWithTokenAsync(authState);
+            }
             StateHasChanged();
         }
     }
@@ -150,7 +267,6 @@ else
     private async Task LogoutUser()
     {
         await AuthService.LogoutAsync();
-        Snackbar.Add("You have been logged out", Severity.Info);
         NavigationManager.NavigateTo("/");
     }
 
@@ -221,4 +337,10 @@ else
         true => Icons.Material.Rounded.LightMode,
         false => Icons.Material.Outlined.DarkMode,
     };
+    
+    public void Dispose()
+    {
+        // Unsubscribe from the event when the component is disposed
+        ProfilePictureService.OnProfilePictureChanged -= OnProfilePictureChanged;
+    }
 }

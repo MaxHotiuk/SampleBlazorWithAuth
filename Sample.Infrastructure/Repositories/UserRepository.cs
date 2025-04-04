@@ -23,9 +23,16 @@ public class UserRepository(ApplicationDbContext context, UserManager<User> user
         return result;
     }
 
-    public async override Task AddAsync(User user)
+    public async override Task<string> AddAsync(User user)
     {
-        await _userManager.CreateAsync(user);
+        var result = await _userManager.CreateAsync(user);
+        return result.Succeeded ? "Success" : string.Join(", ", result.Errors.Select(e => e.Description));
+    }
+
+    public async override Task<string> UpdateAsync(User user)
+    {
+        var result = await _userManager.UpdateAsync(user);
+        return result.Succeeded ? "Success" : string.Join(", ", result.Errors.Select(e => e.Description));
     }
 
     public async Task<IdentityResult> UpdateAsync(User user, string password)

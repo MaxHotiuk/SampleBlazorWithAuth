@@ -8,5 +8,5 @@ public class User : IdentityUser
 
     public DateTime? BannedTo { get; set; }
 
-    public string ProfilePicture { get; set; } = "pfp_1.png";
+    public byte[]? PfpContent { get; set; }
 }

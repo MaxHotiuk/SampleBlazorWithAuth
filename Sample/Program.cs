@@ -12,6 +12,7 @@ using Sample.Core.Interfaces;
 using Sample.Core.Entities;
 using Sample.Infrastructure.Repositories;
 using Sample.Infrastructure.Seed;
+using Sample.Client.Services;
 
 Env.Load();
 
@@ -63,7 +64,8 @@ builder.Services.AddControllers();
 builder.Services.AddRazorComponents()
     .AddInteractiveWebAssemblyComponents();
 
-builder.Services.AddHttpClient<Sample.Client.Services.AuthService>();
+builder.Services.AddHttpClient<AuthService>();
+builder.Services.AddScoped<ProfilePictureService>();
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 
