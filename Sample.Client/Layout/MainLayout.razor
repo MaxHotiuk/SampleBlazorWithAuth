@@ -64,12 +64,17 @@ else
             
             <MudIconButton Icon="@(DarkLightModeButtonIcon)" Color="Color.Inherit" OnClick="@DarkModeToggle" />
         </MudAppBar>
-        <MudDrawer id="nav-drawer" @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2">
+        <MudDrawer id="nav-drawer" @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Never" Elevation="2">
             <NavMenu />
         </MudDrawer>
         <MudMainContent Class="pt-16 pa-4">
             @Body
         </MudMainContent>
+        <MudAppBar Bottom="true" Fixed="false" Elevation="1">
+            <MudGrid Justify="Justify.Center">
+                <MudText Style="font-size:small">bezshumu</MudText>
+            </MudGrid>
+        </MudAppBar>
     </MudLayout>
 
     <div id="blazor-error-ui" data-nosnippet>
@@ -112,6 +117,40 @@ else
             PaletteLight = _lightPalette,
             PaletteDark = _darkPalette,
             LayoutProperties = new LayoutProperties()
+            {
+                DefaultBorderRadius = "12px",
+                DrawerWidthLeft = "280px",
+                DrawerWidthRight = "280px",
+                AppbarHeight = "64px",
+            },
+            Typography = new Typography()
+            {
+                Default =
+                {
+                    FontFamily = new[] { "Ubuntu", "sans-serif" },
+                    FontSize = "0.875rem",
+                    LineHeight = "1.5"
+                },
+                H1 = 
+                {
+                    FontFamily = new[] { "Ubuntu", "sans-serif" },
+                    FontSize = "2.5rem",
+                    FontWeight = "500"
+                },
+                H2 = 
+                {
+                    FontFamily = new[] { "Ubuntu", "sans-serif" },
+                    FontSize = "2rem",
+                    FontWeight = "500"
+                },
+                // Configure other typography elements as needed
+                Button = 
+                {
+                    FontFamily = new[] { "Ubuntu", "sans-serif" },
+                    FontSize = "0.875rem",
+                    FontWeight = "500"
+                }
+            }
         };
 
         if (OperatingSystem.IsBrowser())
@@ -272,65 +311,111 @@ else
 
     private readonly PaletteLight _lightPalette = new()
     {
-        Primary = "#3f51b5",  // Яскравий синій
-        Secondary = "#ff4081",  // Рожевий/фуксія
-        Tertiary = "#4caf50",  // Зелений
-        AppbarText = "#ffffff",  // Білий текст для кращого контрасту
-        AppbarBackground = "#3f51b5",  // Основний колір
+        // Main colors from palette
+        Primary = "#14213d",      // Dark blue
+        Secondary = "#669bbc",    // Light blue
+        Tertiary = "#fca311",     // Orange/amber
+        
+        // Background colors
+        Background = "#ffffff",   // White
+        Surface = "#ffffff",      // White
+        BackgroundGray = "#f5f5f5",
+        
+        // Appbar
+        AppbarText = "#ffffff",   // White text for better contrast
+        AppbarBackground = "#14213d", // Dark blue background
+        
+        // Drawer
         DrawerBackground = "#ffffff",
-        Background = "#f5f7fa",
-        Surface = "#ffffff",
-        DrawerText = "#424242",
-        DrawerIcon = "#5c6bc0",
-        TextPrimary = "#212121",
-        TextSecondary = "#757575",
+        DrawerText = "#000000",   // Black text
+        DrawerIcon = "#14213d",   // Dark blue icons
+        
+        // Text colors
+        TextPrimary = "#000000",  // Black
+        TextSecondary = "#14213d", // Dark blue
         Black = "#000000",
         White = "#ffffff",
-        GrayLight = "#e0e0e0",
-        GrayLighter = "#f5f5f5",
-        Info = "#2196f3",  // Яскраво-блакитний
-        Error = "#f44336",  // Яскраво-червоний
-        Success = "#4caf50",  // Зелений
-        Warning = "#ff9800",  // Помаранчевий
-        ActionDefault = "#5c6bc0",
-        ActionDisabled = "#bdbdbd",
-        ActionDisabledBackground = "#eeeeee",
-        LinesDefault = "#e0e0e0",
-        TableLines = "#e0e0e0",
-        Divider = "#e0e0e0",
-        OverlayLight = "rgba(255,255,255,0.5)",
+        
+        // Gray variants
+        GrayLight = "#e5e5e5",    // Light gray
+        GrayLighter = "#f5f5f5",  // Lighter gray
+        
+        // Status colors
+        Info = "#669bbc",         // Light blue
+        Error = "#d32f2f",        // Red (kept for visibility)
+        Success = "#4caf50",      // Green (kept for visibility)
+        Warning = "#fca311",      // Orange/amber
+        
+        // Action colors
+        ActionDefault = "#14213d", // Dark blue
+        ActionDisabled = "#e5e5e5", // Light gray
+        ActionDisabledBackground = "#f5f5f5", // Lighter gray
+        
+        // Line/border colors
+        LinesDefault = "#e5e5e5",  // Light gray
+        TableLines = "#e5e5e5",    // Light gray
+        Divider = "#e5e5e5",       // Light gray
+        OverlayLight = "rgba(255,255,255,0.7)",
     };
 
     private readonly PaletteDark _darkPalette = new()
     {
-        Primary = "#7986cb",  // Світліший синій
-        Secondary = "#ff80ab",  // Світліша рожева
-        Tertiary = "#81c784",  // Світліший зелений
-        Surface = "#121212",  // Глибокий чорний
-        Background = "#1a1a1a",
-        BackgroundGray = "#121212",
-        AppbarText = "#ffffff",
-        AppbarBackground = "#121212",
-        DrawerBackground = "#1e1e1e",
-        ActionDefault = "#9fa8da",
-        ActionDisabled = "#616161",
-        ActionDisabledBackground = "#424242",
-        TextPrimary = "#e0e0e0",
-        TextSecondary = "#b0b0b0",
-        TextDisabled = "#616161",
-        DrawerIcon = "#9fa8da",
-        DrawerText = "#e0e0e0",
-        GrayLight = "#424242",
-        GrayLighter = "#2d2d2d",
-        Info = "#64b5f6",  // Яскравий блакитний
-        Success = "#81c784",  // Яскравий зелений
-        Warning = "#ffb74d",  // Яскравий помаранчевий
-        Error = "#e57373",  // Яскравий червоний
-        LinesDefault = "#424242",
-        TableLines = "#424242",
-        Divider = "#424242",
+        // Main colors - soften the palette
+        Primary = "#669bbc",          // Keep light blue but consider #7BAFD4 for better visibility
+        Secondary = "#fca311",        // Orange/amber is fine
+        Tertiary = "#e5e5e5",         // Light gray
+        
+        // Background colors - changed to black
+        Surface = "#000000",          // Changed from #121212 to pure black
+        Background = "#000000",       // Changed from #1e1e2d to pure black
+        BackgroundGray = "#252536",   // Slightly lighter variant
+        
+        // Appbar
+        AppbarText = "#ffffff",       // White text is fine
+        AppbarBackground = "#121212", // Changed to match the new black Surface color
+        
+        // Drawer
+        DrawerBackground = "#121212", // Changed to match the new black Surface color
+        DrawerText = "#e5e5e5",       // Light gray is fine
+        DrawerIcon = "#7BAFD4",       // Slightly lighter blue for better visibility
+        
+        // Text colors
+        TextPrimary = "#ffffff",      // White
+        TextSecondary = "#b8b8b8",    // Softer gray than pure white/light gray
+        TextDisabled = "#666666",     // Dark gray
+        
+        // Gray variants - soften
+        GrayLight = "#333344",        // Slight blue tint to gray
+        GrayLighter = "#282834",      // Slightly lighter with blue tint
+        
+        // Status colors - brighten for visibility on dark backgrounds
+        Info = "#7BAFD4",             // Lighter blue for contrast
+        Success = "#81c784",          // Green
+        Warning = "#ffc857",          // Brighter amber
+        Error = "#f48771",            // Softer red
+        
+        // Lines/border colors - soften
+        LinesDefault = "#333344",     // Match GrayLight
+        TableLines = "#333344",       // Match GrayLight
+        Divider = "#333344",          // Match GrayLight
         OverlayLight = "rgba(0,0,0,0.5)",
     };
+
+    // Additional shadow properties can be set in the theme
+    private MudTheme AddShadows(MudTheme theme)
+    {
+        theme.Shadows = new Shadow();
+        theme.Shadows.Elevation = new string[]
+        {
+            "none",
+            "0px 2px 4px -1px rgba(0,0,0,0.1)",
+            "0px 4px 5px -2px rgba(0,0,0,0.12)",
+            "0px 8px 10px -5px rgba(0,0,0,0.14)",
+            "0px 12px 17px -7px rgba(0,0,0,0.16)",
+            // Add more shadow levels as needed
+        };
+        return theme;
+    }
 
     public string DarkLightModeButtonIcon => _isDarkMode switch
     {

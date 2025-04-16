@@ -6,6 +6,7 @@ using Sample.Client.Providers;
 using Sample.Client.Services;
 using Sample.Infrastructure.Repositories;
 using Sample.Core.Interfaces;
+using MudBlazor;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 
@@ -16,6 +17,7 @@ builder.Services.AddMudServices( config =>
     config.SnackbarConfiguration.HideTransitionDuration = 500;
     config.SnackbarConfiguration.ShowTransitionDuration = 500;
 });
+
 builder.Services.AddBlazoredLocalStorage();
 
 // Configure HttpClient
